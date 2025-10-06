@@ -1,0 +1,88 @@
+Pricing Variables,,,,,,,,,,,,
+,,,,,,,,,,,,
+The cost for towbar parts + towbar fitting minutes are contained on 'TT Towbars.  The cost for VSK parts are contained on TT VSK.  Tow Trust's VSK fitting minute estimates are not used and found below.,,,,,,,,,,,,
+,,,,,,,,,,,,
+TT Towbar & TT Towbar Notes Mapping (enter TT Towbar tab column headers for the required info),,,,,,,,,,,,
+Data requirement,Column header,,,,,,,,,,,
+Make,MAKE,,,,,,,,,,,
+Model,MODEL,,,,,,,,,,,
+Body Tyoe,BODY TYPE,,,,,,,,,,,
+Vehicle Description,VEHICLE DESCRIPTION,,,,,,,,,,,
+Towbar Type,TOWBAR TYPE,,,,,,,,,,,
+RRP,RRP Apr 2025           (Issue 28),,,,,,,,,,,
+Notes,NOTES,,,,,,,,,,,
+,,,,,,,,,,,,
+TT VSK Mapping (enter TT VSK tab column headers for the required info),,,,,,,,,,,,
+Data requirement,Column header,,,,,,,,,,,
+Make,MAKE,,,,,,,,,,,
+Model,MODEL,,,,,,,,,,,
+Body Tyoe,BODY TYPE,,,,,,,,,,,
+Vehicle Description,VEHICLE DESCRIPTION,,,,,,,,,,,
+VSK Type,VSK TYPE,,,,,,,,,,,
+RRP,RRP Apr 2025           (Issue 28),,,,,,,,,,,
+Extension kit required,Full Function Extension Kit,,,,,,,,,,,
+Notes,NOTES,,,,,,,,,,,
+,,,,,,,,,,,,
+Towbar & VSK fitting cost per hour,Cost per hour,,,,,,,,,,,
+Standard fitting price per hour,£170,,,,,,,,,,,
+,,,,,,,,,,,,
+Standard Towbar and Universal Wiring Fitting,,,,,,,,,,,,
+PIN,Minutes,Cost,,,,,,,,,,
+7 PIN,90,£255,,,,,,,,,,
+13 PIN,125.2941176,£355,,,,,,,,,,
+13 PIN road lights only,90,£255,,,,,,,,,,
+Twin,125.2941176,£355,,,,,,,,,,
+,,,,,,,,,,,,
+Standard Towbar and VSK Wiring Fitting,,,,,,,,,,,,
+PIN,Minutes,Cost,,,,,,,,,,
+7 PIN,120,£340,,,,,,,,,,
+13 PIN,155.2941176,£440,,,,,,,,,,
+13 PIN road lights only,0,£0,,,,,,,,,,
+Twin,0,£0,,,,,,,,,,
+,,,,,,,,,,,,
+Towbar and VSK Wiring Fitting ,,,,,,,,,,,,
+Make,Model,Body Type,Vehicle Description,7 PIN Minutes,,13 PIN Minutes,13 PIN road lights only Minutes,Twin Minutes,7 PIN Minutes Cost,13 PIN Minutes Cost,13 PIN road lights only Minutes Cost,Twin Minutes Cost
+VOLKSWAGEN,T5,Chassis Cab,Transporter T5 Chassis Cab (7E/7F) - Models With & Without prep 10/2009 > 08/2015,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6,Chassis Cab,Transporter T6 Chassis Cab (7G) - Models With & Without Prep 06/2015 > 10/2019,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T5,Van,Transporter T5 II Van (7E/7F) - Models With & Without Prep 10/2009 > 08/2015,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6,Van,Transporter T6 Van (7G) - Models With & Without Prep 06/2015 > 10/2019,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6.1,Van,Transporter T6.1 Van - Models With & Without Prep 11/2019 >>,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T7,Van,Transporter T7 Van   -  With Prep Only 01/2025 >>,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T5,Chassis Cab,Transporter T5 Chassis Cab (7E/7F)- Models With & Without Prep 10/2009 > 08/2015,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6,Chassis Cab,Transporter T6 Chass Cab (7G) - Models With & Without Prep 06/2015 > 10/2019,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T5,Van,Transporter T5 II Van (7E/7F) - Models With & Without Prep 10/2009 > 08/2015,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T5,Van,Transporter T5 II Van - With Prep Only 07/2011 > 08/2015,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6,Van,Transporter T6 Van (7G) - Models With & Without Prep 06/2015 > 10/2019,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6,Van,Transporter T6 Van- With Prep Only 06/2015 > 10/2019,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6.1,Van,Transporter T6.1Van - Models With & Without Prep 11/2019 >>,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T6.1,Van,Transporter T6.1 Van - With Prep Only 11/2019 >>,340,,355,n/a,n/a,340,355,n/a,n/a
+VOLKSWAGEN,T7,Van,Transporter T7 Van   -  With Prep Only 01/2025 >>,340,,355,n/a,n/a,340,355,n/a,n/a
+,,,,,,,,,,,,
+Pickup 5m cable cost,,,,,,,,,,,,
+PIN,Cost,,,,,,,,,,,
+7 PIN,£15,,,,,,,,,,,
+13 PIN,£35,,,,,,,,,,,
+13 PIN road lights only,£35,,,,,,,,,,,
+Twin,£0,,,,,,,,,,,
+,,,,,,,,,,,,
+Row Output & Label Rules,,,,,,,,,,,,
+Quote Type,Row Kind,PIN,VSK,Cable,Extension Kit,Towbar Type contains,Towbar Type does not contain,Enable,Label,,,
+Towbars + Fitting +/- VSK,Towbar Only,7 PIN,No,Yes,No,,,Yes,7-pin (12N) socket universal electrics for road lights only - (bike rack/trailer with 7-pin socket),,,
+Towbars + Fitting +/- VSK,Towbar Plus VSK,7 PIN,Yes,No,Yes,,,Yes,7-pin (12N) socket fully wired electrics with VSK wiring - (bike rack/trailer with 7-pin socket),,,
+Towbars + Fitting +/- VSK,Towbar Only,13 PIN,No,Yes,No,,,Yes,13-pin socket universal electrics for caravans (bike rack/trailer with 13-pin socket),,,
+Towbars + Fitting +/- VSK,Towbar Plus VSK,13 PIN,Yes,No,Yes,,,Yes,13-pin socket fully wired electrics with VSK for caravans (bike rack/trailer with 13-pin socket),,,
+Towbars + Fitting +/- VSK,Towbar Only,13 PIN road lights only,No,Yes,No,,,Yes,13-pin socket universal wired for road lights only (bike rack/trailer with 13-pin socket),,,
+Towbars + Fitting +/- VSK,Towbar Plus VSK,13 PIN road lights only,Yes,No,Yes,,,No,N/a,,,
+Towbars + Fitting +/- VSK,Towbar Only,TWIN,No,Yes,No,,Detachable,Yes,Twin 7-pin (12N & 12S) socket universal electrics for caravans (pre 2008),,,
+Towbars + Fitting +/- VSK,Towbar Only,TWIN,No,Yes,No,Detachable,,No,N/a,,,
+Towbars + Fitting +/- VSK,Towbar Plus VSK,TWIN,Yes,No,Yes,,,No,N/a,,,
+VSK only,VSK Only,7 PIN,Yes,No,Yes,,,Yes,7-pin (12N) socket fully wired electrics with VSK wiring - (bike rack/trailer with 7-pin socket),,,
+VSK only,VSK Only,13 PIN,Yes,No,Yes,,,Yes,13-pin socket fully wired electrics with VSK for caravans (bike rack/trailer with 13-pin socket),,,
+,,,,,,,,,,,,
+Assumptions,,,,,,,,,,,,
+The Quote Tool assumes that:,,,,,,,,,,,,
+- there is no VSK option for Twin PIN,,,,,,,,,,,,
+"- there is no TWIN PIN option for detachable towbars, as can't fit",,,,,,,,,,,,
+- 7 PIN will only match with 7 PIN VSK,,,,,,,,,,,,
+- 13 PIN will only match with 13 PIN VSK,,,,,,,,,,,,
+- the pick up 5m cable only applies to universal wiring,,,,,,,,,,,,
