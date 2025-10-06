@@ -1,566 +1,146 @@
+<!-- QuoteForm.html — Operations sidebar form (no VSK-only path) -->
 <!DOCTYPE html>
 <html>
-<head>
- <base target="_top">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <style>
-   body { font-family: Arial, sans-serif; padding: 20px; margin: 0; }
-   select, input, button { width: 100%; padding: 10px; margin-bottom: 16px; font-size: 16px; box-sizing: border-box; }
-   #form-container { display: none; }
-   .spinner { border: 6px solid #f3f3f3; border-top: 6px solid #4285f4; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
-   @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
-   .btn-secondary { background:#f3f6fb; border:1px solid #d6deee; }
-   button[disabled] { opacity: 0.6; cursor: not-allowed; }
-   .muted { color:#667085; font-size:14px; margin-top:-8px; margin-bottom:8px; }
-   .inline-label { font-weight: bold; display:block; margin-bottom:6px; }
-   .note { font-size: 13px; color:#6b7280; }
-   #errorBox { display:none; background:#FEF2F2; color:#991B1B; border:1px solid #FCA5A5; padding:12px; border-radius:6px; margin-bottom:16px; white-space:pre-wrap; }
-   input[readonly] { background:#fff; color:inherit; }
-   .field-error { outline: 2px solid #ef4444; outline-offset: 1px; }
- </style>
-</head>
-
-
-<body>
- <div id="loader">
-   <div class="spinner"></div>
-   <p>Loading form...</p>
- </div>
-
-
- <div id="errorBox"></div>
-
-
- <div id="form-container">
-
-
-   <!-- NEW: Quote Type -->
-   <label for="quoteType">Quote Type:</label>
-   <select id="quoteType" onchange="onQuoteTypeChange()">
-     <option value="towbar" selected>Towbars + Fitting +/- VSK</option>
-     <option value="vsk">VSK only</option>
-   </select>
-
-
-   <!-- Vehicle section (hidden in VSK-only) -->
-   <div id="vehicleSection">
-     <label for="make">Make:</label>
-     <select id="make"></select>
-
-
-     <label for="model">Model:</label>
-     <select id="model" onchange="onModelChange()" disabled></select>
-
-
-     <label for="body">Body Type:</label>
-     <select id="body" onchange="onBodyChange()" disabled></select>
-
-
-     <label for="year">Year:</label>
-     <select id="year" onchange="onYearChange()" disabled></select>
-   </div>
-
-
-   <!-- Towbar section (appears after Year in towbar mode) -->
-   <div id="towbarSection" style="display:none;">
-     <label for="towbarType">Towbar Type (hold shift to select one or more):</label>
-     <select id="towbarType" multiple onchange="onTowbarTypeChange()"></select>
-   </div>
-
-
-   <!-- Pin Type (towbar mode) -->
-   <div id="pinTypeSection">
-     <label for="pinType">Pin Type (hold shift to select one or more):</label>
-     <select id="pinType" multiple></select>
-     <div class="note muted">Select all that apply (e.g., 13 PIN + Twin).</div>
-   </div>
-
-
-   <!-- MOVED: Pick Up 5m Cable (now immediately under Pin Type; hidden in VSK-only) -->
-   <div id="pickupCableSection">
-     <label for="pickupCable">Pick Up 5m Cable:</label>
-     <select id="pickupCable">
-       <option value="" disabled selected>Please select...</option>
-       <option value="Yes">Yes</option>
-       <option value="No">No</option>
-     </select>
-   </div>
-
-
-   <!-- VSK Required (towbar mode only) -->
-   <div id="vskRequiredRow">
-     <label for="vskRequired">VSK Required</label>
-     <input id="vskRequired" type="text" readonly value="—" />
-   </div>
-
-
-   <!-- VSK Section -->
-   <div id="vskSection">
-     <div id="vskOptionWrap">
-       <label for="vskOption">Add VSK?</label>
-       <select id="vskOption" onchange="onVSKChange()">
-         <option value="" disabled selected>Please select...</option>
-         <option value="Yes">Yes</option>
-         <option value="No">No</option>
-       </select>
-     </div>
-
-
-     <div id="vskFallback" style="display:none;">
-       <label for="vskMake">VSK Make:</label>
-       <select id="vskMake" onchange="onVSKMakeChange()"></select>
-
-
-       <label for="vskModel">VSK Model:</label>
-       <select id="vskModel" onchange="onVSKModelChange()"></select>
-
-
-       <label for="vskBody">VSK Body Type:</label>
-       <select id="vskBody" onchange="onVSKBodyChange()"></select>
-
-
-       <label for="vskYear">VSK Year:</label>
-       <select id="vskYear" onchange="onVSKYearChange()"></select>
-
-
-       <div id="vskTowbarSection" style="display:none;">
-         <label for="vskTowbarType">VSK Towbar Type (hold shift to select one or more):</label>
-         <select id="vskTowbarType" multiple></select>
-       </div>
-     </div>
-   </div>
-
-
-   <!-- Optional Name & Email -->
-   <label for="clientName">Name: (optional)</label>
-   <input id="clientName" type="text" placeholder="Full name" />
-
-
-   <label for="clientEmail">Email: (optional)</label>
-   <input id="clientEmail" type="email" placeholder="name@example.com" />
-
-
-   <!-- Buttons -->
-   <button id="submitBtn" onclick="submitQuote()">Generate Quote</button>
-   <button id="prepareEmailBtn" class="btn-secondary" onclick="prepareEmailQuote()">Save Client Quote</button>
-   <button id="partPriceBtn" class="btn-secondary" onclick="generatePartPriceInfo()">Part &amp; Price Info</button>
- </div>
-
-
- <script>
-   function clearError(){ const el=document.getElementById('errorBox'); el.textContent=''; el.style.display='none'; }
-   function showError(msg){ const el=document.getElementById('errorBox'); el.textContent=String(msg||'Unknown error'); el.style.display='block'; }
-   window.onerror=function(message,source,lineno,colno,error){ showError('Client error: '+(message||(error&&error.message)||'Unknown')); };
-
-
-   let allData=[], vskData=[];
-   const BASE_PIN_OPTIONS=['7 PIN','13 PIN','13 PIN road lights only','Twin'];
-
-
-   function escapeHtml(text){ const map={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}; return (text||'').replace(/[&<>"]/g,m=>map[m]); }
-
-
-   function populateDropdown(id, options, allowMultiple=false){
-     const select=document.getElementById(id);
-     select.innerHTML='';
-     const unique=[...new Set(options)].filter(Boolean);
-     if(!allowMultiple && unique.length>1){
-       const ph=document.createElement('option'); ph.value=''; ph.textContent='Please select...'; ph.disabled=true; ph.selected=true; select.appendChild(ph);
-     }
-     unique.forEach(opt=>{ const o=document.createElement('option'); o.value=opt; o.innerHTML=escapeHtml(opt); select.appendChild(o); });
-     select.disabled=false;
-     if(!allowMultiple && unique.length===1){ select.value=unique[0]; setTimeout(()=>select.dispatchEvent(new Event('change')),0); }
-     if(allowMultiple) select.selectedIndex=unique.length===1?0:-1;
-   }
-
-
-   function repopulateMultiPreserve(id, options){
-     const select=document.getElementById(id);
-     const prev=new Set(Array.from(select.selectedOptions).map(o=>o.value));
-     select.innerHTML='';
-     const unique=[...new Set(options)].filter(Boolean);
-     unique.forEach(opt=>{ const o=document.createElement('option'); o.value=opt; o.innerHTML=escapeHtml(opt); if(prev.has(opt)) o.selected=true; select.appendChild(o); });
-     select.disabled=false;
-     if(unique.length===1) select.selectedIndex=0;
-   }
-
-
-   function resetFollowing(fromId){
-     const ids=['model','body','year','towbarType','vskMake','vskModel','vskBody','vskYear','vskTowbarType'];
-     const fromIndex=ids.indexOf(fromId);
-     for(let i=fromIndex+1;i<ids.length;i++){ const el=document.getElementById(ids[i]); if(el){ el.innerHTML=''; el.disabled=true; } }
-     document.getElementById('towbarSection').style.display='none';
-     document.getElementById('vskFallback').style.display='none';
-     document.getElementById('vskTowbarSection').style.display='none';
-     setVSKRequired('—');
-   }
-
-
-   function getMultiValues(id){ const el=document.getElementById(id); return el?Array.from(el.selectedOptions).map(o=>o.value):[]; }
-
-
-   /* ===== Cascade (towbar mode) ===== */
-   function onMakeChange(){
-     const make=document.getElementById('make').value;
-     const models=allData.filter(r=>r.make===make).map(r=>r.model?.trim());
-     populateDropdown('model',models);
-     document.getElementById('model').disabled=false;
-     resetFollowing('model');
-   }
-   function onModelChange(){
-     const make=document.getElementById('make').value;
-     const model=document.getElementById('model').value;
-     const bodies=allData.filter(r=>r.make===make && r.model===model).map(r=>r.body?.trim());
-     populateDropdown('body',bodies);
-     document.getElementById('body').disabled=false;
-     resetFollowing('body');
-   }
-   function onBodyChange(){
-     const make=document.getElementById('make').value;
-     const model=document.getElementById('model').value;
-     const body=document.getElementById('body').value;
-     const years=allData.filter(r=>r.make===make && r.model===model && r.body===body).map(r=>r.year?.trim());
-     populateDropdown('year',years);
-     document.getElementById('year').disabled=false;
-     resetFollowing('year');
-   }
-
-
-   /* ===== VSK Required (towbar mode only) ===== */
-   let vskTimer=null, vskInFlight=false, vskLastKey='';
-   function vskKey(p){ return [p.make,p.model,p.body,p.year].map(x=>String(x||'').trim()).join('|'); }
-   function scheduleVSKLookup(){ clearTimeout(vskTimer); vskTimer=setTimeout(runVSKLookup,500); }
-   function runVSKLookup(attempt=0){
-     if(document.getElementById('quoteType').value==='vsk') return; // skip in VSK mode
-     const p=buildPayload();
-     if(!p.make || !p.model || !p.body || !p.year){ setVSKRequired('—'); return; }
-     const key=vskKey(p);
-     if(key===vskLastKey || vskInFlight) return;
-     vskInFlight=true; setVSKRequired('Checking…');
-
-
-     google.script.run
-       .withSuccessHandler(result=>{ vskInFlight=false; vskLastKey=key; setVSKRequired(result||'Not specified'); })
-       .withFailureHandler(err=>{
-         vskInFlight=false;
-         const msg=String(err||'');
-         if(msg.includes('429') && attempt<3){
-           const delay=400*(attempt+1)+Math.floor(Math.random()*200);
-           setTimeout(()=>runVSKLookup(attempt+1),delay);
-         } else { setVSKRequired('Lookup error'); showError('VSK Required lookup error: '+msg); }
-       })
-       .getVSKRequired({ make:p.make, model:p.model, body:p.body, year:p.year });
-   }
-
-
-   function onYearChange(){
-     const qt=document.getElementById('quoteType').value;
-     if(qt==='vsk') return;
-
-
-     const make=document.getElementById('make').value;
-     const model=document.getElementById('model').value;
-     const body=document.getElementById('body').value;
-     const year=document.getElementById('year').value;
-
-
-     const types=allData.filter(r=>r.make===make && r.model===model && r.body===body && r.year===year).map(r=>r.type?.trim());
-     populateDropdown('towbarType',types,true);
-     document.getElementById('towbarSection').style.display='block';
-
-
-     repopulateMultiPreserve('pinType',BASE_PIN_OPTIONS);
-     scheduleVSKLookup();
-   }
-
-
-   function onTowbarTypeChange(){
-     const selected=getMultiValues('towbarType').map(s=>String(s||'').toLowerCase());
-     let allowed=BASE_PIN_OPTIONS.slice();
-     if(selected.length>0 && selected.every(t=>t.includes('detachable'))){
-       allowed=allowed.filter(opt=>opt.toLowerCase()!=='twin');
-     }
-     repopulateMultiPreserve('pinType',allowed);
-   }
-
-
-   /* ===== VSK cascade ===== */
-   function onVSKChange(){
-     const sel=document.getElementById('vskOption').value;
-     const fb=document.getElementById('vskFallback');
-     if(sel==='Yes'){
-       fb.style.display='block';
-       const makes=vskData.map(r=>r.make?.trim());
-       populateDropdown('vskMake',makes);
-     } else {
-       ['vskMake','vskModel','vskBody','vskYear','vskTowbarType'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.innerHTML=''; el.disabled=true; }});
-       fb.style.display='none';
-       document.getElementById('vskTowbarSection').style.display='none';
-     }
-   }
-   function onVSKMakeChange(){
-     const make=document.getElementById('vskMake').value;
-     const models=vskData.filter(r=>r.make===make).map(r=>r.model?.trim());
-     populateDropdown('vskModel',models);
-   }
-   function onVSKModelChange(){
-     const make=document.getElementById('vskMake').value;
-     const model=document.getElementById('vskModel').value;
-     const bodies=vskData.filter(r=>r.make===make && r.model===model).map(r=>r.body?.trim());
-     populateDropdown('vskBody',bodies);
-   }
-   function onVSKBodyChange(){
-     const make=document.getElementById('vskMake').value;
-     const model=document.getElementById('vskModel').value;
-     const body=document.getElementById('vskBody').value;
-     const years=vskData.filter(r=>r.make===make && r.model===model && r.body===body).map(r=>r.year?.trim());
-     populateDropdown('vskYear',years);
-     document.getElementById('vskYear').onchange=onVSKYearChange;
-   }
-   function onVSKYearChange(){
-     const make=document.getElementById('vskMake').value;
-     const model=document.getElementById('vskModel').value;
-     const body=document.getElementById('vskBody').value;
-     const year=document.getElementById('vskYear').value;
-     const types=vskData.filter(r=>r.make===make && r.model===model && r.body===body && r.year===year).map(r=>r.type?.trim());
-     populateDropdown('vskTowbarType',types,true);
-     document.getElementById('vskTowbarSection').style.display='block';
-   }
-
-
-   function setVSKRequired(text){ document.getElementById('vskRequired').value=text||'—'; }
-
-
-   /* ===== Quote Type UI toggle ===== */
-   function onQuoteTypeChange(){ const mode=document.getElementById('quoteType').value; applyQuoteTypeUI(mode); }
-
-
-   function applyQuoteTypeUI(mode){
-     const vehicle=document.getElementById('vehicleSection');
-     const towbarS=document.getElementById('towbarSection');
-     const pinS   =document.getElementById('pinTypeSection');
-     const cableS =document.getElementById('pickupCableSection');
-     const vskReq =document.getElementById('vskRequiredRow');
-     const vskOptW=document.getElementById('vskOptionWrap');
-     const vskFB  =document.getElementById('vskFallback');
-
-
-     if(mode==='vsk'){
-       vehicle.style.display='none';
-       towbarS.style.display='none';
-       pinS.style.display='none';
-       cableS.style.display='none';  // HIDE CABLE in VSK-only
-       vskReq.style.display='none';
-
-
-       vskOptW.style.display='none';
-       document.getElementById('vskOption').value='Yes'; // force Yes
-       vskFB.style.display='block';
-
-
-       if(!document.getElementById('vskMake').options.length){
-         const makes=vskData.map(r=>r.make?.trim());
-         populateDropdown('vskMake',makes);
-       }
-     } else {
-       vehicle.style.display='';
-       pinS.style.display='';
-       cableS.style.display='';      // SHOW CABLE in towbar mode
-       vskReq.style.display='';
-       vskOptW.style.display='';
-       if(document.getElementById('vskOption').value!=='Yes'){
-         vskFB.style.display='none';
-       }
-     }
-   }
-
-
-   /* ===== Payload + actions ===== */
-   function buildPayload(){
-     const getMulti=id=>{ const el=document.getElementById(id); return el?Array.from(el.selectedOptions).map(o=>o.value):[]; };
-     const qt=document.getElementById('quoteType').value;
-     return {
-       quoteType: qt,
-       make: document.getElementById('make').value,
-       model: document.getElementById('model').value,
-       body: document.getElementById('body').value,
-       year: document.getElementById('year').value,
-       towbarTypes: getMulti('towbarType'),
-       pinTypes: getMulti('pinType'),
-       // if VSK-only, we won't use pickupCable in pricing; still sent as-is
-       pickupCable: document.getElementById('pickupCable')?.value || '',
-       clientName: document.getElementById('clientName')?.value?.trim() || '',
-       clientEmail: document.getElementById('clientEmail')?.value?.trim() || '',
-       vskOption: qt==='vsk' ? 'Yes' : (document.getElementById('vskOption').value || ''),
-       vskMake: document.getElementById('vskMake')?.value || '',
-       vskModel: document.getElementById('vskModel')?.value || '',
-       vskBody: document.getElementById('vskBody')?.value || '',
-       vskYear: document.getElementById('vskYear')?.value || '',
-       vskTowbarTypes: getMulti('vskTowbarType')
-     };
-   }
-
-
-   const REQUIRE_PIN_TYPE=false;
-   const FIELD_LABELS={
-     make:'Make', model:'Model', body:'Body Type', year:'Year',
-     towbarType:'Towbar Type (hold shift to select one or more)',
-     pinType:'Pin Type (hold shift to select one or more)',
-     vskOption:'Add VSK?', vskMake:'VSK Make', vskModel:'VSK Model',
-     vskBody:'VSK Body Type', vskYear:'VSK Year',
-     vskTowbarType:'VSK Towbar Type (hold shift to select one or more)',
-     pickupCable:'Pick Up 5m Cable', clientName:'Name (optional)', clientEmail:'Email (optional)'
-   };
-
-
-   function markError(id,on){ const el=document.getElementById(id); if(!el) return; if(on) el.classList.add('field-error'); else el.classList.remove('field-error'); }
-   function isVisible(el){ if(!el) return false; if(el.disabled) return false; const st=window.getComputedStyle(el); return st.display!=='none' && el.offsetParent!==null; }
-   function isMultiSelected(id){ const el=document.getElementById(id); return !!(el && el.selectedOptions && el.selectedOptions.length>0); }
-   function validateEmail(val){ const s=String(val||'').trim(); return !s || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
-
-
-   function validateBeforeSubmit(){
-     Object.keys(FIELD_LABELS).forEach(id=>markError(id,false));
-     clearError();
-     const missing=[];
-     const qt=document.getElementById('quoteType').value;
-
-
-     const reqSelect=(id,cond=true)=>{
-       if(!cond) return;
-       const el=document.getElementById(id);
-       if(!el || !isVisible(el)) return;
-       const ok=el.multiple ? (el.selectedOptions.length>0) : (el.value && el.value!=='');
-       if(!ok){ missing.push(FIELD_LABELS[id]); markError(id,true); }
-     };
-
-
-     // Email optional; only flag if provided and invalid
-     const emailEl=document.getElementById('clientEmail');
-     if(isVisible(emailEl) && !validateEmail(emailEl.value)){ missing.push('Email (valid)'); markError('clientEmail',true); }
-
-
-     // Cable only relevant for towbar mode
-     reqSelect('pickupCable', qt!=='vsk');
-
-
-     if(qt==='vsk'){
-       // VSK cascade required
-       reqSelect('vskMake'); reqSelect('vskModel'); reqSelect('vskBody'); reqSelect('vskYear'); reqSelect('vskTowbarType');
-     } else {
-       reqSelect('make'); reqSelect('model'); reqSelect('body'); reqSelect('year');
-       const vskChoice=(document.getElementById('vskOption')?.value || '');
-       if(vskChoice==='Yes'){ reqSelect('vskMake'); reqSelect('vskModel'); reqSelect('vskBody'); reqSelect('vskYear'); reqSelect('vskTowbarType'); }
-       const towbarSelected=isMultiSelected('towbarType');
-       const vskSelected=(vskChoice==='Yes') && isMultiSelected('vskTowbarType');
-       if(!towbarSelected && !vskSelected){
-         missing.push('Towbar Type or VSK Towbar Type');
-         if(isVisible(document.getElementById('towbarType'))) markError('towbarType',true);
-         if(isVisible(document.getElementById('vskTowbarType'))) markError('vskTowbarType',true);
-       }
-     }
-
-
-     if(REQUIRE_PIN_TYPE && qt!=='vsk') reqSelect('pinType');
-
-
-     if(missing.length){
-       showError('Please complete the following before generating a quote:\n• '+missing.join('\n• '));
-       const firstErr=document.querySelector('.field-error'); if(firstErr) firstErr.scrollIntoView({behavior:'smooth',block:'center'});
-       return false;
-     }
-     return true;
-   }
-
-
-   document.getElementById('form-container').addEventListener('change',(e)=>{ if(e.target && e.target.id) markError(e.target.id,false); });
-
-
-   function submitQuote(){
-     if(!validateBeforeSubmit()) return;
-     const data=buildPayload();
-     const btn=document.getElementById('submitBtn'); btn.disabled=true;
-     google.script.run
-       .withSuccessHandler(()=>{ btn.disabled=false; })
-       .withFailureHandler(err=>{ btn.disabled=false; showError('Submit failed: '+err); })
-       .processQuote(data);
-   }
-
-
-   function generatePartPriceInfo(){
-     const data=buildPayload();
-     const btn=document.getElementById('partPriceBtn'); btn.disabled=true;
-     google.script.run
-       .withSuccessHandler(()=>{ btn.disabled=false; })
-       .withFailureHandler(err=>{ btn.disabled=false; showError('Part & Price Info failed: '+err); })
-       .generatePartPriceInfo(data);
-   }
-
-
-   function prepareEmailQuote(){
-     const btn=document.getElementById('prepareEmailBtn'); btn.disabled=true;
-     const original=btn.textContent; btn.textContent='Preparing…';
-     const payload=buildPayload();
-     google.script.run
-       .withSuccessHandler(()=>{ btn.disabled=false; btn.textContent=original; })
-       .withFailureHandler(err=>{ btn.disabled=false; btn.textContent=original; showError('Save Client Quote failed: '+err); })
-       .prepareAndEmailQuoteCopy(payload);
-   }
-
-
-   function loadData(){
-     document.getElementById('loader').style.display='block';
-     document.getElementById('form-container').style.display='none';
-     clearError();
-
-
-     // Initialize
-     repopulateMultiPreserve('pinType',BASE_PIN_OPTIONS);
-     document.getElementById('pinTypeSection').style.display='block';
-     document.getElementById('pickupCableSection').style.display='block';
-
-
-     google.script.run.withSuccessHandler(()=>{}).withFailureHandler(err=>showError('Server not reachable: '+err)).ping();
-
-
-     google.script.run
-       .withSuccessHandler(data=>{
-         if(!Array.isArray(data) || data.length===0){
-           showError('No vehicle data returned from getFullDropdownData().');
-         } else if(!['make','model','body','year','type'].every(k=>k in data[0])){
-           showError('getFullDropdownData() must return objects with keys: make, model, body, year, type.');
-         } else {
-           allData=data;
-           const makes=data.map(r=>r.make);
-           populateDropdown('make',makes);
-           document.getElementById('make').onchange=onMakeChange;
-         }
-         document.getElementById('loader').style.display='none';
-         document.getElementById('form-container').style.display='block';
-
-
-         // Apply initial mode
-         applyQuoteTypeUI(document.getElementById('quoteType').value);
-       })
-       .withFailureHandler(err=>{
-         showError('getFullDropdownData() failed: '+err);
-         document.getElementById('loader').style.display='none';
-         document.getElementById('form-container').style.display='block';
-       })
-       .getFullDropdownData();
-
-
-     google.script.run
-       .withSuccessHandler(data=>{ vskData=Array.isArray(data)?data:[]; })
-       .withFailureHandler(err=>showError('getVSKDropdownData() failed: '+err))
-       .getVSKDropdownData();
-   }
-
-
-   window.onload=loadData;
- </script>
-</body>
+  <head>
+    <base target="_top">
+    <style>
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:13px;padding:12px}
+      label{display:block;margin:10px 0 4px}
+      select,input,textarea{width:100%;box-sizing:border-box;padding:6px}
+      .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .hint{color:#666;font-size:12px}
+      .section{margin-top:14px;padding-top:10px;border-top:1px solid #eee}
+    </style>
+    <script>
+      /* Client -> Server helpers */
+      function onLoad() {
+        google.script.run.withSuccessHandler(initForm).form_getInitialData();
+      }
+      function initForm(data){
+        // populate dropdowns
+        bindOptions('make', data.makes);
+        bindOptions('model', data.models);
+        bindOptions('body', data.bodies);
+        bindOptions('vehDescTow', data.vehicleDescriptions);
+        bindOptions('vehDescVsk', data.vehicleDescriptions); // same list; VSK Year replaced with Vehicle Description
+        bindOptions('towbarType', data.towbarTypes);
+        bindOptions('vskTowbarType', data.vskTowbarTypes);
+
+        document.getElementById('vskRequired').addEventListener('change', updateTowbarNotes);
+        document.getElementById('vskTowbarType').addEventListener('change', updateVskNotes);
+        ['make','model','body','vehDescVsk'].forEach(id => document.getElementById(id).addEventListener('change', updateExtensionKit));
+      }
+
+      function bindOptions(id, list){
+        const el = document.getElementById(id);
+        el.innerHTML = '<option value="">— Select —</option>' + (list||[]).map(v=>`<option>${v}</option>`).join('');
+      }
+
+      function updateTowbarNotes(){
+        const payload = readForm();
+        google.script.run.withSuccessHandler(v => document.getElementById('towbarNotes').value = v || '')
+          .form_lookupTowbarNotes(payload);
+      }
+      function updateVskNotes(){
+        const payload = readForm();
+        google.script.run.withSuccessHandler(v => document.getElementById('vskNotes').value = v || '')
+          .form_lookupVskNotes(payload);
+      }
+      function updateExtensionKit(){
+        const payload = readForm();
+        google.script.run.withSuccessHandler(v => document.getElementById('extensionKit').value = v || '')
+          .form_lookupVskExtensionRequired(payload);
+      }
+
+      function readForm(){
+        const g = id => document.getElementById(g.arguments[0]).value || '';
+        return {
+          make: g('make'),
+          model: g('model'),
+          body: g('body'),
+          vehDescTow: g('vehDescTow'),   // Towbar Vehicle Description
+          towbarType: g('towbarType'),
+          vskRequired: g('vskRequired'),
+          vskTowbarType: g('vskTowbarType'),
+          vehDescVsk: g('vehDescVsk')    // VSK Vehicle Description (Year removed)
+        };
+      }
+      function submitQuote(){
+        const data = readForm();
+        google.script.run.withSuccessHandler(msg => alert(msg)).processQuoteFromForm(data);
+      }
+    </script>
+  </head>
+  <body onload="onLoad()">
+    <h3>Somerset Mobile Towbars — Quote</h3>
+
+    <div class="row">
+      <div>
+        <label>Make</label>
+        <select id="make"></select>
+      </div>
+      <div>
+        <label>Model</label>
+        <select id="model"></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Body Type</label>
+        <select id="body"></select>
+      </div>
+      <div>
+        <label>Vehicle Description (Towbar)</label>
+        <select id="vehDescTow"></select>
+        <div class="hint">Replaces “Towbar Year”.</div>
+      </div>
+    </div>
+
+    <div class="row section">
+      <div>
+        <label>Towbar Type</label>
+        <select id="towbarType"></select>
+      </div>
+      <div>
+        <label>VSK required</label>
+        <select id="vskRequired">
+          <option value="">— Select —</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Towbar Notes (from TT Towbar Notes)</label>
+      <textarea id="towbarNotes" readonly rows="3" placeholder="Auto-filled when VSK required changes"></textarea>
+    </div>
+
+    <div class="row section">
+      <div>
+        <label>VSK Towbar Type</label>
+        <select id="vskTowbarType"></select>
+      </div>
+      <div>
+        <label>Vehicle Description (VSK)</label>
+        <select id="vehDescVsk"></select>
+        <div class="hint">Replaces “VSK Year”.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <label>VSK Notes (from TT VSK Notes)</label>
+      <textarea id="vskNotes" readonly rows="3" placeholder="Auto-filled from VSK Towbar Type"></textarea>
+    </div>
+
+    <div class="section">
+      <label>Extension kit required (from TT VSK)</label>
+      <input id="extensionKit" type="text" readonly placeholder="Auto-filled from Make/Model/Body/Vehicle Description">
+    </div>
+
+    <div class="section">
+      <button onclick="submitQuote()">Generate Quote</button>
+    </div>
+  </body>
 </html>
-
-
-
