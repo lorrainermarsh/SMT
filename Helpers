@@ -1,0 +1,118 @@
+/** Helpers.gs — central utils & named-range helpers (Somerset Mobile Towbars) */
+
+const SMT_CFG = Object.freeze({
+  SHEETS: {
+    OPS:               'Operations',
+    TOWBARS:           'TT Towbars',
+    VSK:               'TT VSK',
+    TOWBAR_NOTES:      'TT Towbar Notes',
+    VSK_NOTES:         'TT VSK Notes',
+    PRICE_VARIABLES:   'Price Variables',
+    QUOTE:             'Quote'
+  },
+  NAMES: {
+    MAP_TOWBARS:       'TT_Towbars_mapping',          // Data requirement | Column header
+    MAP_VSK:           'TT_VSK_mapping',              // Data requirement | Column header
+    QUOTE_RULES:       'Quote_rules',                 // rules driving Quote & Breakdown
+    NON_STD_VSK_FIT:   'Non_standard_VSK_fitting_costs'
+  },
+  REQS: { // “Data requirement” keys used in mapping tables
+    MAKE:              'Make',
+    MODEL:             'Model',
+    BODY:              'Body Type',
+    VEH_DESC:          'Vehicle Description',
+    NOTES:             'Notes',
+    EXTENSION_REQ:     'Extension kit required',
+  },
+  INTERNAL_MARKER:     'DETAILED INFO - INTERNAL VIEW ONLY'
+});
+
+/* ---------- core utilities ---------- */
+
+function sh_(name) {
+  const s = SpreadsheetApp.getActive().getSheetByName(name);
+  if (!s) throw new Error(`Sheet not found: ${name}`);
+  return s;
+}
+function rng_(named) {
+  const r = SpreadsheetApp.getActive().getRangeByName(named);
+  if (!r) throw new Error(`Named range not found: ${named}`);
+  return r;
+}
+function norm_(s) { return String(s).replace(/\s+/g, ' ').trim().toLowerCase(); }
+
+function readNamedTable_(named) {
+  const values = rng_(named).getValues();
+  if (!values.length) return [];
+  const headers = values[0].map(h => norm_(h));
+  return values.slice(1)
+    .filter(row => row.some(c => c !== '' && c != null))
+    .map(row => Object.fromEntries(headers.map((h, i) => [h, row[i]])));
+}
+
+function headerIndex_(sheetName, headerTextExactOrMapped) {
+  const s = sh_(sheetName);
+  const headerRow = s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0];
+  let idx = headerRow.findIndex(h => String(h) === String(headerTextExactOrMapped));
+  if (idx === -1) {
+    const want = norm_(headerTextExactOrMapped);
+    idx = headerRow.findIndex(h => norm_(h) === want);
+  }
+  if (idx === -1) throw new Error(`Header not found on "${sheetName}": ${headerTextExactOrMapped}`);
+  return idx;
+}
+
+function mapping_(mapName) {
+  const rows = readNamedTable_(mapName);
+  // normalise keys
+  return rows.map(r => {
+    const o = {};
+    Object.keys(r).forEach(k => o[norm_(k)] = r[k]);
+    return o;
+  });
+}
+
+/** Return the actual column header on a sheet for a “data requirement” */
+function resolveHeader_(mapName, requirementKey) {
+  const m = mapping_(mapName);
+  const row = m.find(r => norm_(r['data requirement']) === norm_(requirementKey));
+  if (!row) throw new Error(`Mapping missing Data requirement "${requirementKey}" in ${mapName}`);
+  return String(row['column header']);
+}
+
+/** Read one value by requirement from a row that matches a criteria object of requirements */
+function lookupByRequirements_(sheetName, mapName, matchRequirementsObj, returnRequirementKey) {
+  const s = sh_(sheetName);
+  const headers = s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0];
+
+  const matchIdx = Object.keys(matchRequirementsObj).map(req => ({
+    req,
+    idx: headerIndex_(sheetName, resolveHeader_(mapName, req)),
+    want: String(matchRequirementsObj[req]).toLowerCase()
+  }));
+
+  const retIdx = headerIndex_(sheetName, resolveHeader_(mapName, returnRequirementKey));
+  const body = s.getRange(2, 1, s.getLastRow() - 1, s.getLastColumn()).getValues();
+
+  for (let r = 0; r < body.length; r++) {
+    const row = body[r];
+    const ok = matchIdx.every(f => String(row[f.idx]).toLowerCase() === f.want);
+    if (ok) return row[retIdx];
+  }
+  return '';
+}
+
+/** Non-standard VSK fitting cost override (returns number or null) */
+function getNonStdVskPinOverride_(make, model, body, vehDesc) {
+  const rows = readNamedTable_(SMT_CFG.NAMES.NON_STD_VSK_FIT);
+  // expected headers (normalised): make | model | body type | vehicle description | pin cost
+  const target = rows.find(r =>
+    norm_(r['make']) === norm_(make) &&
+    norm_(r['model']) === norm_(model) &&
+    norm_(r['body type']) === norm_(body) &&
+    norm_(r['vehicle description']) === norm_(vehDesc)
+  );
+  if (!target) return null;
+  const val = Number(target['pin cost']);
+  return isFinite(val) ? val : null;
+}
